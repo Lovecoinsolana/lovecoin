@@ -1,5 +1,5 @@
 import { FastifyInstance, FastifyRequest } from "fastify";
-import type { WebSocket } from "@fastify/websocket";
+import type { WebSocket } from "ws";
 import { JwtPayload } from "./jwt.js";
 import { prisma } from "./prisma.js";
 
@@ -223,7 +223,7 @@ export async function setupWebSocket(app: FastifyInstance) {
     });
 
     // Handle errors
-    socket.on("error", (err) => {
+    socket.on("error", (err: Error) => {
       console.error("WebSocket error:", err);
       handleDisconnect(authSocket);
     });
