@@ -412,7 +412,7 @@ export async function conversationsRoutes(app: FastifyInstance) {
       // Broadcast to WebSocket clients
       broadcastNewMessage(id, {
         id: message.id,
-        content: message.content,
+        content: message.content ?? "",
         contentType: message.contentType,
         senderId: message.senderId,
         paymentTx: message.paymentTx,

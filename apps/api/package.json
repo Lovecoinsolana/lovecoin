@@ -37,6 +37,7 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^20.11.16",
     "@types/uuid": "^11.0.0",
+    "@types/ws": "^8.18.1",
     "eslint": "^8.56.0",
     "jsonwebtoken": "^9.0.3",
     "prisma": "^5.9.1",
