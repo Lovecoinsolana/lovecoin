@@ -96,7 +96,7 @@ export const api = {
       }>("/auth/session"),
 
     logout: () =>
-      fetchApi<{ success: boolean }>("/auth/logout", { method: "POST" }),
+      fetchApi<{ success: boolean }>("/auth/logout", { method: "POST", body: JSON.stringify({}) }),
   },
 
   verification: {
@@ -126,6 +126,7 @@ export const api = {
         headers: {
           "X-PAYMENT": txSignature,
         },
+        body: JSON.stringify({}),
       }),
   },
 
@@ -156,6 +157,7 @@ export const api = {
     deletePhoto: (photoId: string) =>
       fetchApi<{ success: boolean }>(`/profile/photos/${photoId}`, {
         method: "DELETE",
+        body: JSON.stringify({}),
       }),
 
     updatePhotoPosition: (photoId: string, position: number) =>
@@ -167,6 +169,7 @@ export const api = {
     setPhotoPrimary: (photoId: string) =>
       fetchApi<{ success: boolean }>(`/profile/photos/${photoId}/primary`, {
         method: "PATCH",
+        body: JSON.stringify({}),
       }),
   },
 
@@ -177,13 +180,13 @@ export const api = {
     like: (userId: string) =>
       fetchApi<{ success: boolean; action: string; isMatch: boolean; matchId?: string }>(
         `/discovery/like/${userId}`,
-        { method: "POST" }
+        { method: "POST", body: JSON.stringify({}) }
       ),
 
     pass: (userId: string) =>
       fetchApi<{ success: boolean; action: string; isMatch: boolean }>(
         `/discovery/pass/${userId}`,
-        { method: "POST" }
+        { method: "POST", body: JSON.stringify({}) }
       ),
   },
 
@@ -195,7 +198,7 @@ export const api = {
       fetchApi<{ match: MatchDetail }>(`/matches/${matchId}`),
 
     unmatch: (matchId: string) =>
-      fetchApi<{ success: boolean }>(`/matches/${matchId}`, { method: "DELETE" }),
+      fetchApi<{ success: boolean }>(`/matches/${matchId}`, { method: "DELETE", body: JSON.stringify({}) }),
   },
 
   conversations: {
@@ -230,6 +233,7 @@ export const api = {
     markRead: (conversationId: string) =>
       fetchApi<{ success: boolean }>(`/conversations/${conversationId}/read`, {
         method: "PATCH",
+        body: JSON.stringify({}),
       }),
   },
 
@@ -237,11 +241,13 @@ export const api = {
     block: (userId: string) =>
       fetchApi<{ success: boolean }>(`/users/${userId}/block`, {
         method: "POST",
+        body: JSON.stringify({}),
       }),
 
     unblock: (userId: string) =>
       fetchApi<{ success: boolean }>(`/users/${userId}/block`, {
         method: "DELETE",
+        body: JSON.stringify({}),
       }),
 
     isBlocked: (userId: string) =>
