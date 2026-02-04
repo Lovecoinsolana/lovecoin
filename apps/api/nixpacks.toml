@@ -8,4 +8,4 @@ cmds = ["cd ../.. && pnpm install --no-frozen-lockfile"]
 cmds = ["cd ../.. && pnpm --filter @lovecoin/api run db:generate && pnpm --filter @lovecoin/api run build"]
 
 [start]
-cmd = "node dist/index.js"
+cmd = "npx prisma migrate deploy && node dist/index.js"
