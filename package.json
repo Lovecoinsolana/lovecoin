@@ -2,6 +2,7 @@
   "name": "lovecoin",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "pnpm@10.22.0",
   "scripts": {
     "dev": "pnpm -r --parallel dev",
     "dev:web": "pnpm --filter @lovecoin/web dev",
