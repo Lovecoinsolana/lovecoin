@@ -1,0 +1,17 @@
+packages:
+  - apps/*
+  - packages/*
+
+ignoredBuiltDependencies:
+  - '@prisma/client'
+  - '@prisma/engines'
+  - '@stellar/stellar-sdk'
+  - blake-hash
+  - bufferutil
+  - esbuild
+  - prisma
+  - protobufjs
+  - tiny-secp256k1
+  - unrs-resolver
+  - usb
+  - utf-8-validate

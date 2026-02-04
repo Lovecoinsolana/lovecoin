@@ -1,0 +1,27 @@
+{
+  "name": "lovecoin",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm -r --parallel dev",
+    "dev:web": "pnpm --filter @lovecoin/web dev",
+    "dev:api": "pnpm --filter @lovecoin/api dev",
+    "build": "pnpm -r build",
+    "build:web": "pnpm --filter @lovecoin/web build",
+    "build:api": "pnpm --filter @lovecoin/api build",
+    "lint": "pnpm -r lint",
+    "db:generate": "pnpm --filter @lovecoin/api db:generate",
+    "db:migrate": "pnpm --filter @lovecoin/api db:migrate",
+    "db:push": "pnpm --filter @lovecoin/api db:push",
+    "db:studio": "pnpm --filter @lovecoin/api db:studio",
+    "clean": "pnpm -r clean && rimraf node_modules"
+  },
+  "devDependencies": {
+    "rimraf": "^5.0.5",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=8.0.0"
+  }
+}

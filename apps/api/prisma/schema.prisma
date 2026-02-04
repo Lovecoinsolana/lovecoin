@@ -1,0 +1,189 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String    @id @default(uuid())
+  walletAddress   String    @unique @map("wallet_address")
+  isVerified      Boolean   @default(false) @map("is_verified")
+  verificationTx  String?   @map("verification_tx")
+  verificationAt  DateTime? @map("verification_at")
+  isSuspended     Boolean   @default(false) @map("is_suspended")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  lastActiveAt    DateTime  @default(now()) @map("last_active_at")
+
+  profile         Profile?
+  sessions        Session[]
+  swipesFrom      Swipe[]        @relation("SwipesFrom")
+  swipesTo        Swipe[]        @relation("SwipesTo")
+  matchesAsA      Match[]        @relation("MatchUserA")
+  matchesAsB      Match[]        @relation("MatchUserB")
+  messagesSent    Message[]      @relation("MessagesSent")
+  blocksCreated   Block[]        @relation("BlocksCreated")
+  blocksReceived  Block[]        @relation("BlocksReceived")
+  reportsCreated  Report[]       @relation("ReportsCreated")
+  reportsReceived Report[]       @relation("ReportsReceived")
+
+  @@map("users")
+}
+
+model Session {
+  id          String    @id @default(uuid())
+  userId      String    @map("user_id")
+  tokenHash   String    @map("token_hash")
+  ipAddress   String?   @map("ip_address")
+  userAgent   String?   @map("user_agent")
+  expiresAt   DateTime  @map("expires_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  revokedAt   DateTime? @map("revoked_at")
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model Profile {
+  id          String   @id @default(uuid())
+  userId      String   @unique @map("user_id")
+  displayName String   @map("display_name")
+  birthDate   DateTime @map("birth_date") @db.Date
+  bio         String?
+  city        String?
+  country     String?
+  gender      String?
+  lookingFor  String[] @map("looking_for")
+  interests   String[]
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  photos      ProfilePhoto[]
+
+  @@map("profiles")
+}
+
+model ProfilePhoto {
+  id         String   @id @default(uuid())
+  profileId  String   @map("profile_id")
+  storageKey String   @map("storage_key")
+  position   Int
+  isPrimary  Boolean  @default(false) @map("is_primary")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  profile    Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@map("profile_photos")
+}
+
+enum SwipeAction {
+  LIKE
+  PASS
+}
+
+model Swipe {
+  id         String      @id @default(uuid())
+  fromUserId String      @map("from_user_id")
+  toUserId   String      @map("to_user_id")
+  action     SwipeAction
+  createdAt  DateTime    @default(now()) @map("created_at")
+
+  fromUser   User        @relation("SwipesFrom", fields: [fromUserId], references: [id], onDelete: Cascade)
+  toUser     User        @relation("SwipesTo", fields: [toUserId], references: [id], onDelete: Cascade)
+
+  @@unique([fromUserId, toUserId])
+  @@index([toUserId, action])
+  @@map("swipes")
+}
+
+model Match {
+  id        String   @id @default(uuid())
+  userAId   String   @map("user_a_id")
+  userBId   String   @map("user_b_id")
+  matchedAt DateTime @default(now()) @map("matched_at")
+  isActive  Boolean  @default(true) @map("is_active")
+
+  userA        User          @relation("MatchUserA", fields: [userAId], references: [id], onDelete: Cascade)
+  userB        User          @relation("MatchUserB", fields: [userBId], references: [id], onDelete: Cascade)
+  conversation Conversation?
+
+  @@unique([userAId, userBId])
+  @@map("matches")
+}
+
+model Conversation {
+  id            String    @id @default(uuid())
+  matchId       String    @unique @map("match_id")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  lastMessageAt DateTime? @map("last_message_at")
+
+  match         Match     @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  messages      Message[]
+
+  @@map("conversations")
+}
+
+enum ContentType {
+  TEXT
+  PHOTO
+}
+
+model Message {
+  id             String       @id @default(uuid())
+  conversationId String       @map("conversation_id")
+  senderId       String       @map("sender_id")
+  contentType    ContentType  @map("content_type")
+  content        String?
+  mediaKey       String?      @map("media_key")
+  paymentTx      String       @map("payment_tx")
+  paymentAmount  BigInt       @map("payment_amount")
+  sentAt         DateTime     @default(now()) @map("sent_at")
+  readAt         DateTime?    @map("read_at")
+
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender         User         @relation("MessagesSent", fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, sentAt])
+  @@index([paymentTx])
+  @@map("messages")
+}
+
+model Block {
+  id        String   @id @default(uuid())
+  blockerId String   @map("blocker_id")
+  blockedId String   @map("blocked_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  blocker   User     @relation("BlocksCreated", fields: [blockerId], references: [id], onDelete: Cascade)
+  blocked   User     @relation("BlocksReceived", fields: [blockedId], references: [id], onDelete: Cascade)
+
+  @@unique([blockerId, blockedId])
+  @@map("blocks")
+}
+
+enum ReportStatus {
+  PENDING
+  REVIEWED
+  ACTIONED
+  DISMISSED
+}
+
+model Report {
+  id         String       @id @default(uuid())
+  reporterId String       @map("reporter_id")
+  reportedId String       @map("reported_id")
+  reason     String
+  details    String?
+  status     ReportStatus @default(PENDING)
+  createdAt  DateTime     @default(now()) @map("created_at")
+  reviewedAt DateTime?    @map("reviewed_at")
+
+  reporter   User         @relation("ReportsCreated", fields: [reporterId], references: [id], onDelete: Cascade)
+  reported   User         @relation("ReportsReceived", fields: [reportedId], references: [id], onDelete: Cascade)
+
+  @@map("reports")
+}
