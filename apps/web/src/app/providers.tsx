@@ -10,7 +10,7 @@ import {
   PhantomWalletAdapter,
   SolflareWalletAdapter,
 } from "@solana/wallet-adapter-wallets";
-import { clusterApiUrl } from "@solana/web3.js";
+import { clusterApiUrl, type Cluster } from "@solana/web3.js";
 import { ToastProvider } from "@/components/Toast";
 
 // Import wallet adapter styles
@@ -21,8 +21,14 @@ interface ProvidersProps {
 }
 
 export function Providers({ children }: ProvidersProps) {
-  // Use devnet for development
-  const endpoint = useMemo(() => clusterApiUrl("devnet"), []);
+  // Use environment variable or fallback to mainnet
+  const endpoint = useMemo(() => {
+    const rpcUrl = process.env.NEXT_PUBLIC_SOLANA_RPC_URL;
+    if (rpcUrl) return rpcUrl;
+    
+    const network = (process.env.NEXT_PUBLIC_SOLANA_NETWORK || "mainnet-beta") as Cluster;
+    return clusterApiUrl(network);
+  }, []);
 
   // Configure supported wallets
   const wallets = useMemo(
