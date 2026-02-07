@@ -12,6 +12,7 @@ import {
 } from "@solana/wallet-adapter-wallets";
 import { clusterApiUrl, type Cluster } from "@solana/web3.js";
 import { ToastProvider } from "@/components/Toast";
+import { ThemeProvider } from "@/context/ThemeContext";
 
 // Import wallet adapter styles
 import "@solana/wallet-adapter-react-ui/styles.css";
@@ -37,12 +38,14 @@ export function Providers({ children }: ProvidersProps) {
   );
 
   return (
-    <ConnectionProvider endpoint={endpoint}>
-      <WalletProvider wallets={wallets} autoConnect>
-        <WalletModalProvider>
-          <ToastProvider>{children}</ToastProvider>
-        </WalletModalProvider>
-      </WalletProvider>
-    </ConnectionProvider>
+    <ThemeProvider>
+      <ConnectionProvider endpoint={endpoint}>
+        <WalletProvider wallets={wallets} autoConnect>
+          <WalletModalProvider>
+            <ToastProvider>{children}</ToastProvider>
+          </WalletModalProvider>
+        </WalletProvider>
+      </ConnectionProvider>
+    </ThemeProvider>
   );
 }

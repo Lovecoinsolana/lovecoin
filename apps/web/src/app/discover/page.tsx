@@ -236,8 +236,8 @@ export default function DiscoverPage() {
         <Header />
         <div className="flex flex-1 items-center justify-center">
           <div className="text-center">
-            <p className="mb-2 text-lg font-medium text-neutral-300">No more profiles</p>
-            <p className="mb-4 text-sm text-neutral-500">Check back later for new people</p>
+            <p className="mb-2 text-lg font-medium text-theme">No more profiles</p>
+            <p className="mb-4 text-sm text-theme-muted">Check back later for new people</p>
             <button
               onClick={loadProfiles}
               className="rounded-full bg-brand-600 px-6 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-700"
@@ -257,7 +257,7 @@ export default function DiscoverPage() {
 
   // Main discovery view
   return (
-    <main className="flex min-h-dvh flex-col bg-neutral-950">
+    <main className="flex min-h-dvh flex-col bg-theme">
       <Header />
 
       {currentProfile && (
@@ -340,9 +340,9 @@ export default function DiscoverPage() {
           </div>
 
           {/* Bio & Interests Card */}
-          <div className="mt-3 rounded-2xl bg-white p-4">
+          <div className="mt-3 rounded-2xl bg-theme-card border border-theme p-4">
             {currentProfile.bio && (
-              <p className="mb-3 text-sm text-neutral-600">
+              <p className="mb-3 text-sm text-theme-secondary">
                 {currentProfile.bio}
               </p>
             )}
@@ -352,7 +352,7 @@ export default function DiscoverPage() {
                 {currentProfile.interests.map((interest) => (
                   <span
                     key={interest}
-                    className="rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1 text-xs font-medium uppercase tracking-wide text-neutral-600"
+                    className="rounded-full border border-theme bg-theme-secondary px-3 py-1 text-xs font-medium uppercase tracking-wide text-theme-secondary"
                   >
                     {interest}
                   </span>
@@ -361,7 +361,7 @@ export default function DiscoverPage() {
             )}
 
             {!currentProfile.bio && currentProfile.interests.length === 0 && (
-              <p className="text-center text-sm text-neutral-400">
+              <p className="text-center text-sm text-theme-muted">
                 No bio or interests yet
               </p>
             )}
@@ -373,7 +373,7 @@ export default function DiscoverPage() {
             <button
               onClick={handlePass}
               disabled={status === "swiping"}
-              className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-neutral-300 bg-white text-neutral-400 shadow-lg transition-all hover:scale-110 hover:border-red-400 hover:text-red-500 disabled:opacity-50"
+              className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-theme-light bg-theme-card text-theme-muted shadow-lg transition-all hover:scale-110 hover:border-red-400 hover:text-red-500 disabled:opacity-50"
             >
               <svg className="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />

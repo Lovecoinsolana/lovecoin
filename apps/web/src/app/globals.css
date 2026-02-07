@@ -2,9 +2,41 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
+/* Dark theme (default) */
+:root,
+:root.dark {
   --background: #0a0a0a;
+  --background-secondary: #171717;
+  --background-tertiary: #262626;
   --foreground: #ededed;
+  --foreground-secondary: #a3a3a3;
+  --foreground-muted: #737373;
+  --border: #262626;
+  --border-light: #404040;
+  --card: #171717;
+  --card-hover: #1f1f1f;
+  --input-bg: #171717;
+  --input-border: #404040;
+  --input-text: #ededed;
+  --input-placeholder: #737373;
+}
+
+/* Light theme */
+:root.light {
+  --background: #ffffff;
+  --background-secondary: #f5f5f5;
+  --background-tertiary: #e5e5e5;
+  --foreground: #171717;
+  --foreground-secondary: #525252;
+  --foreground-muted: #737373;
+  --border: #e5e5e5;
+  --border-light: #d4d4d4;
+  --card: #ffffff;
+  --card-hover: #f5f5f5;
+  --input-bg: #ffffff;
+  --input-border: #d4d4d4;
+  --input-text: #171717;
+  --input-placeholder: #a3a3a3;
 }
 
 body {
@@ -12,6 +44,44 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, sans-serif;
   min-height: 100dvh;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Theme-aware utility classes */
+.bg-theme {
+  background-color: var(--background);
+}
+
+.bg-theme-secondary {
+  background-color: var(--background-secondary);
+}
+
+.bg-theme-tertiary {
+  background-color: var(--background-tertiary);
+}
+
+.bg-theme-card {
+  background-color: var(--card);
+}
+
+.text-theme {
+  color: var(--foreground);
+}
+
+.text-theme-secondary {
+  color: var(--foreground-secondary);
+}
+
+.text-theme-muted {
+  color: var(--foreground-muted);
+}
+
+.border-theme {
+  border-color: var(--border);
+}
+
+.border-theme-light {
+  border-color: var(--border-light);
 }
 
 /* Mobile-first container */
@@ -26,4 +96,15 @@ body {
 
 .safe-top {
   padding-top: env(safe-area-inset-top);
+}
+
+/* Theme-aware input styling */
+.input-theme {
+  background-color: var(--input-bg);
+  border-color: var(--input-border);
+  color: var(--input-text);
+}
+
+.input-theme::placeholder {
+  color: var(--input-placeholder);
 }

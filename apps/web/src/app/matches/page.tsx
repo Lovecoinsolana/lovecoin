@@ -89,9 +89,9 @@ export default function MatchesPage() {
   }
 
   return (
-    <main className="container-mobile min-h-dvh pt-4 safe-top safe-bottom">
+    <main className="container-mobile min-h-dvh pt-4 safe-top safe-bottom bg-theme">
       <header className="mb-4 flex items-center justify-between">
-        <h1 className="text-xl font-bold">Matches</h1>
+        <h1 className="text-xl font-bold text-theme">Matches</h1>
         <Link
           href="/profile"
           className="flex h-8 w-8 items-center justify-center rounded-full bg-neutral-800 text-sm hover:bg-neutral-700"
@@ -103,8 +103,8 @@ export default function MatchesPage() {
       {status === "empty" ? (
         <div className="flex flex-1 flex-col items-center justify-center py-20">
           <img src="/logo.png" alt="Lovecoin" className="mb-4 h-16 w-16 opacity-50" />
-          <p className="mb-2 text-lg font-medium text-neutral-300">No matches yet</p>
-          <p className="mb-6 text-sm text-neutral-500">
+          <p className="mb-2 text-lg font-medium text-theme">No matches yet</p>
+          <p className="mb-6 text-sm text-theme-muted">
             Keep swiping to find your match
           </p>
           <Link
@@ -120,7 +120,7 @@ export default function MatchesPage() {
             <Link
               key={match.matchId}
               href={`/chat/${match.conversationId}`}
-              className="flex items-center gap-3 rounded-xl border border-neutral-800 bg-neutral-900 p-3 transition-colors hover:bg-neutral-800"
+              className="flex items-center gap-3 rounded-xl border border-theme bg-theme-card p-3 transition-colors hover:bg-theme-tertiary"
             >
               {/* Avatar */}
               <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-500 to-brand-700 text-xl font-bold text-white">
@@ -130,23 +130,23 @@ export default function MatchesPage() {
               {/* Info */}
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between">
-                  <span className="font-medium">
+                  <span className="font-medium text-theme">
                     {match.otherUser.displayName}
                     {match.otherUser.age && (
-                      <span className="ml-1 text-neutral-400">, {match.otherUser.age}</span>
+                      <span className="ml-1 text-theme-secondary">, {match.otherUser.age}</span>
                     )}
                   </span>
                   {match.lastMessage && (
-                    <span className="text-xs text-neutral-500">
+                    <span className="text-xs text-theme-muted">
                       {formatTime(match.lastMessage.sentAt)}
                     </span>
                   )}
                 </div>
 
                 {match.lastMessage ? (
-                  <p className="truncate text-sm text-neutral-400">
+                  <p className="truncate text-sm text-theme-secondary">
                     {match.lastMessage.isFromMe && (
-                      <span className="text-neutral-500">You: </span>
+                      <span className="text-theme-muted">You: </span>
                     )}
                     {match.lastMessage.content || "[Photo]"}
                   </p>
@@ -157,7 +157,7 @@ export default function MatchesPage() {
                 )}
 
                 {match.otherUser.city && (
-                  <p className="text-xs text-neutral-500">
+                  <p className="text-xs text-theme-muted">
                     {match.otherUser.city}
                     {match.otherUser.country && `, ${match.otherUser.country}`}
                   </p>
@@ -165,7 +165,7 @@ export default function MatchesPage() {
               </div>
 
               {/* Arrow */}
-              <div className="text-neutral-600">&rsaquo;</div>
+              <div className="text-theme-muted">&rsaquo;</div>
             </Link>
           ))}
         </div>
