@@ -316,7 +316,7 @@ export const api = {
       const formData = new FormData();
       formData.append("file", file);
 
-      const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
+      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
       const headers: Record<string, string> = {};
       if (token) headers["Authorization"] = `Bearer ${token}`;
 
