@@ -338,6 +338,43 @@ export const api = {
         method: "DELETE",
         body: JSON.stringify({}),
       }),
+
+    purchase: (listingId: string, txSignature: string) =>
+      fetchApi<{
+        success: boolean;
+        purchase: {
+          id: string;
+          listingId: string;
+          priceSol: number;
+          platformFeeSol: number;
+          sellerAmountSol: number;
+          txSignature: string;
+          purchasedAt: string;
+        };
+      }>(`/listings/${listingId}/purchase`, {
+        method: "POST",
+        body: JSON.stringify({ txSignature }),
+      }),
+
+    contact: (listingId: string) =>
+      fetchApi<{
+        conversationId: string;
+        isNew: boolean;
+        seller: { id: string; displayName: string };
+      }>(`/listings/${listingId}/contact`, {
+        method: "POST",
+        body: JSON.stringify({}),
+      }),
+
+    getPurchases: () =>
+      fetchApi<{
+        purchases: PurchaseHistory[];
+      }>("/listings/purchases"),
+
+    getSales: () =>
+      fetchApi<{
+        sales: SaleHistory[];
+      }>("/listings/sales"),
   },
 };
 
@@ -552,4 +589,38 @@ export interface UpdateListingInput {
   city?: string;
   country?: string;
   status?: "ACTIVE" | "SOLD";
+}
+
+export interface PurchaseHistory {
+  id: string;
+  listing: {
+    id: string;
+    title: string;
+    photo: string | null;
+    seller: {
+      id: string;
+      displayName: string;
+    };
+  };
+  priceSol: number;
+  txSignature: string;
+  purchasedAt: string;
+}
+
+export interface SaleHistory {
+  id: string;
+  listing: {
+    id: string;
+    title: string;
+    photo: string | null;
+  };
+  buyer: {
+    id: string;
+    displayName: string;
+  };
+  priceSol: number;
+  sellerAmountSol: number;
+  platformFeeSol: number;
+  txSignature: string;
+  purchasedAt: string;
 }

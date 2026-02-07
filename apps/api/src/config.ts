@@ -68,6 +68,11 @@ export const config = {
     10
   ),
 
+  // Marketplace platform fee (percentage)
+  marketplaceFeePercent: parseFloat(
+    process.env.MARKETPLACE_FEE_PERCENT || "3"
+  ),
+
   // S3 Storage
   s3Bucket: process.env.S3_BUCKET || "lovecoin-photos",
   s3Region: process.env.S3_REGION || "us-east-1",

@@ -1,7 +1,9 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { z } from "zod";
+import { Connection, PublicKey, LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { prisma } from "../lib/prisma.js";
 import { JwtPayload } from "../lib/jwt.js";
+import { config } from "../config.js";
 import {
   uploadPhoto,
   deletePhoto,
@@ -12,6 +14,8 @@ import {
   getExtensionFromMimeType,
   MAX_PHOTO_SIZE,
 } from "../lib/s3.js";
+
+const PLATFORM_FEE_PERCENT = config.marketplaceFeePercent;
 
 const MAX_PHOTOS_PER_LISTING = 5;
 
@@ -540,6 +544,335 @@ export async function listingsRoutes(app: FastifyInstance) {
         });
 
         return reply.send({ success: true });
+      }
+    );
+
+    // POST /listings/:id/purchase - Record a purchase after payment
+    protectedApp.post(
+      "/:id/purchase",
+      async (
+        request: FastifyRequest<{
+          Params: { id: string };
+          Body: { txSignature: string };
+        }>,
+        reply: FastifyReply
+      ) => {
+        const { userId } = request.user as JwtPayload;
+        const { id } = request.params;
+        const { txSignature } = request.body;
+
+        if (!txSignature) {
+          return reply.status(400).send({ error: "Transaction signature required" });
+        }
+
+        // Get listing with seller info
+        const listing = await prisma.listing.findUnique({
+          where: { id },
+          include: {
+            seller: true,
+            purchase: true,
+          },
+        });
+
+        if (!listing) {
+          return reply.status(404).send({ error: "Listing not found" });
+        }
+
+        if (listing.status !== "ACTIVE") {
+          return reply.status(400).send({ error: "Listing is no longer available" });
+        }
+
+        if (listing.sellerId === userId) {
+          return reply.status(400).send({ error: "Cannot purchase your own listing" });
+        }
+
+        if (listing.purchase) {
+          return reply.status(400).send({ error: "Listing already purchased" });
+        }
+
+        // Verify the transaction on Solana
+        const connection = new Connection(config.solanaRpcUrl, "confirmed");
+
+        try {
+          const tx = await connection.getTransaction(txSignature, {
+            commitment: "confirmed",
+            maxSupportedTransactionVersion: 0,
+          });
+
+          if (!tx) {
+            return reply.status(400).send({ error: "Transaction not found or not confirmed" });
+          }
+
+          if (tx.meta?.err) {
+            return reply.status(400).send({ error: "Transaction failed" });
+          }
+
+          // Verify the transaction transferred SOL to the seller
+          const sellerPubkey = new PublicKey(listing.seller.walletAddress);
+          const platformPubkey = new PublicKey(config.platformWalletAddress);
+
+          const preBalances = tx.meta?.preBalances || [];
+          const postBalances = tx.meta?.postBalances || [];
+          const accountKeys = tx.transaction.message.getAccountKeys().staticAccountKeys;
+
+          let sellerReceived = 0;
+          let platformReceived = 0;
+
+          for (let i = 0; i < accountKeys.length; i++) {
+            const pubkey = accountKeys[i];
+            const balanceChange = (postBalances[i] || 0) - (preBalances[i] || 0);
+
+            if (pubkey.equals(sellerPubkey) && balanceChange > 0) {
+              sellerReceived = balanceChange;
+            }
+            if (pubkey.equals(platformPubkey) && balanceChange > 0) {
+              platformReceived = balanceChange;
+            }
+          }
+
+          const expectedTotal = listing.priceSol * LAMPORTS_PER_SOL;
+          const expectedPlatformFee = expectedTotal * (PLATFORM_FEE_PERCENT / 100);
+          const expectedSellerAmount = expectedTotal - expectedPlatformFee;
+
+          // Allow 1% tolerance for rounding
+          const tolerance = 0.01;
+          const sellerOk = Math.abs(sellerReceived - expectedSellerAmount) / expectedSellerAmount < tolerance;
+          const platformOk = Math.abs(platformReceived - expectedPlatformFee) / expectedPlatformFee < tolerance;
+
+          if (!sellerOk || !platformOk) {
+            return reply.status(400).send({
+              error: "Transaction amounts do not match listing price",
+              expected: {
+                sellerAmount: expectedSellerAmount / LAMPORTS_PER_SOL,
+                platformFee: expectedPlatformFee / LAMPORTS_PER_SOL,
+              },
+              received: {
+                sellerAmount: sellerReceived / LAMPORTS_PER_SOL,
+                platformFee: platformReceived / LAMPORTS_PER_SOL,
+              },
+            });
+          }
+
+          // Record the purchase
+          const purchase = await prisma.$transaction(async (tx) => {
+            // Create purchase record
+            const purchase = await tx.purchase.create({
+              data: {
+                listingId: listing.id,
+                buyerId: userId,
+                sellerId: listing.sellerId,
+                priceSol: listing.priceSol,
+                platformFeeSol: expectedPlatformFee / LAMPORTS_PER_SOL,
+                sellerAmountSol: expectedSellerAmount / LAMPORTS_PER_SOL,
+                txSignature,
+              },
+            });
+
+            // Update listing status to SOLD
+            await tx.listing.update({
+              where: { id: listing.id },
+              data: { status: "SOLD" },
+            });
+
+            return purchase;
+          });
+
+          return reply.status(201).send({
+            success: true,
+            purchase: {
+              id: purchase.id,
+              listingId: purchase.listingId,
+              priceSol: purchase.priceSol,
+              platformFeeSol: purchase.platformFeeSol,
+              sellerAmountSol: purchase.sellerAmountSol,
+              txSignature: purchase.txSignature,
+              purchasedAt: purchase.purchasedAt,
+            },
+          });
+        } catch (error) {
+          console.error("Error verifying transaction:", error);
+          return reply.status(500).send({ error: "Failed to verify transaction" });
+        }
+      }
+    );
+
+    // POST /listings/:id/contact - Create or get conversation with seller
+    protectedApp.post(
+      "/:id/contact",
+      async (
+        request: FastifyRequest<{ Params: { id: string } }>,
+        reply: FastifyReply
+      ) => {
+        const { userId } = request.user as JwtPayload;
+        const { id } = request.params;
+
+        const listing = await prisma.listing.findUnique({
+          where: { id },
+          include: {
+            seller: {
+              include: {
+                profile: {
+                  select: { displayName: true },
+                },
+              },
+            },
+          },
+        });
+
+        if (!listing) {
+          return reply.status(404).send({ error: "Listing not found" });
+        }
+
+        if (listing.sellerId === userId) {
+          return reply.status(400).send({ error: "Cannot message yourself" });
+        }
+
+        // Check if there's already a match/conversation between these users
+        const existingMatch = await prisma.match.findFirst({
+          where: {
+            OR: [
+              { userAId: userId, userBId: listing.sellerId },
+              { userAId: listing.sellerId, userBId: userId },
+            ],
+          },
+          include: { conversation: true },
+        });
+
+        if (existingMatch?.conversation) {
+          return reply.send({
+            conversationId: existingMatch.conversation.id,
+            isNew: false,
+            seller: {
+              id: listing.seller.id,
+              displayName: listing.seller.profile?.displayName || "Anonymous",
+            },
+          });
+        }
+
+        // Create a new match and conversation for marketplace contact
+        const [userA, userB] = [userId, listing.sellerId].sort();
+
+        const match = await prisma.match.create({
+          data: {
+            userAId: userA,
+            userBId: userB,
+            conversation: {
+              create: {},
+            },
+          },
+          include: { conversation: true },
+        });
+
+        return reply.status(201).send({
+          conversationId: match.conversation!.id,
+          isNew: true,
+          seller: {
+            id: listing.seller.id,
+            displayName: listing.seller.profile?.displayName || "Anonymous",
+          },
+        });
+      }
+    );
+
+    // GET /listings/purchases - Get user's purchase history
+    protectedApp.get(
+      "/purchases",
+      async (request: FastifyRequest, reply: FastifyReply) => {
+        const { userId } = request.user as JwtPayload;
+
+        const purchases = await prisma.purchase.findMany({
+          where: { buyerId: userId },
+          include: {
+            listing: {
+              include: {
+                photos: {
+                  orderBy: { position: "asc" },
+                  take: 1,
+                },
+                seller: {
+                  include: {
+                    profile: {
+                      select: { displayName: true },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          orderBy: { purchasedAt: "desc" },
+        });
+
+        return reply.send({
+          purchases: purchases.map((p) => ({
+            id: p.id,
+            listing: {
+              id: p.listing.id,
+              title: p.listing.title,
+              photo: p.listing.photos[0]
+                ? getPhotoUrl(p.listing.photos[0].storageKey)
+                : null,
+              seller: {
+                id: p.listing.seller.id,
+                displayName: p.listing.seller.profile?.displayName || "Anonymous",
+              },
+            },
+            priceSol: p.priceSol,
+            txSignature: p.txSignature,
+            purchasedAt: p.purchasedAt,
+          })),
+        });
+      }
+    );
+
+    // GET /listings/sales - Get user's sales history
+    protectedApp.get(
+      "/sales",
+      async (request: FastifyRequest, reply: FastifyReply) => {
+        const { userId } = request.user as JwtPayload;
+
+        const sales = await prisma.purchase.findMany({
+          where: { sellerId: userId },
+          include: {
+            listing: {
+              include: {
+                photos: {
+                  orderBy: { position: "asc" },
+                  take: 1,
+                },
+              },
+            },
+            buyer: {
+              include: {
+                profile: {
+                  select: { displayName: true },
+                },
+              },
+            },
+          },
+          orderBy: { purchasedAt: "desc" },
+        });
+
+        return reply.send({
+          sales: sales.map((s) => ({
+            id: s.id,
+            listing: {
+              id: s.listing.id,
+              title: s.listing.title,
+              photo: s.listing.photos[0]
+                ? getPhotoUrl(s.listing.photos[0].storageKey)
+                : null,
+            },
+            buyer: {
+              id: s.buyer.id,
+              displayName: s.buyer.profile?.displayName || "Anonymous",
+            },
+            priceSol: s.priceSol,
+            sellerAmountSol: s.sellerAmountSol,
+            platformFeeSol: s.platformFeeSol,
+            txSignature: s.txSignature,
+            purchasedAt: s.purchasedAt,
+          })),
+        });
       }
     );
   });

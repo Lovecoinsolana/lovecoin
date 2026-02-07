@@ -29,6 +29,8 @@ model User {
   reportsCreated  Report[]       @relation("ReportsCreated")
   reportsReceived Report[]       @relation("ReportsReceived")
   listings        Listing[]
+  purchasesAsBuyer  Purchase[]   @relation("PurchasesBuyer")
+  purchasesAsSeller Purchase[]   @relation("PurchasesSeller")
 
   @@map("users")
 }
@@ -222,11 +224,32 @@ model Listing {
 
   seller      User            @relation(fields: [sellerId], references: [id], onDelete: Cascade)
   photos      ListingPhoto[]
+  purchase    Purchase?
 
   @@index([status, createdAt])
   @@index([sellerId])
   @@index([category])
   @@map("listings")
+}
+
+model Purchase {
+  id            String   @id @default(uuid())
+  listingId     String   @unique @map("listing_id")
+  buyerId       String   @map("buyer_id")
+  sellerId      String   @map("seller_id")
+  priceSol      Float    @map("price_sol")
+  platformFeeSol Float   @map("platform_fee_sol")
+  sellerAmountSol Float  @map("seller_amount_sol")
+  txSignature   String   @map("tx_signature")
+  purchasedAt   DateTime @default(now()) @map("purchased_at")
+
+  listing       Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  buyer         User     @relation("PurchasesBuyer", fields: [buyerId], references: [id], onDelete: Cascade)
+  seller        User     @relation("PurchasesSeller", fields: [sellerId], references: [id], onDelete: Cascade)
+
+  @@index([buyerId])
+  @@index([sellerId])
+  @@map("purchases")
 }
 
 model ListingPhoto {
