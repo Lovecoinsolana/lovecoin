@@ -463,9 +463,9 @@ export async function listingsRoutes(app: FastifyInstance) {
           });
         }
 
-        const validation = await validateImageBuffer(fileBuffer);
+        const validation = validateImageBuffer(fileBuffer);
         if (!validation.valid) {
-          return reply.status(400).send({ error: validation.error });
+          return reply.status(400).send({ error: "Invalid image file" });
         }
 
         const detectedType = validation.type || data.mimetype;

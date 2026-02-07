@@ -320,7 +320,7 @@ export const api = {
       const headers: Record<string, string> = {};
       if (token) headers["Authorization"] = `Bearer ${token}`;
 
-      const response = await fetch(`${API_BASE}/listings/${listingId}/photos`, {
+      const response = await fetch(`${API_URL}/listings/${listingId}/photos`, {
         method: "POST",
         headers,
         body: formData,
