@@ -175,6 +175,7 @@ export default function VerifyPage() {
   return (
     <main className="container-mobile flex min-h-dvh flex-col items-center justify-center">
       <div className="mb-8 text-center">
+        <img src="/logo.png" alt="Lovecoin" className="mx-auto mb-4 h-14 w-14" />
         <h1 className="mb-2 text-2xl font-bold">Verify Your Account</h1>
         <p className="text-sm text-neutral-400">
           One-time payment to unlock all features

@@ -83,6 +83,7 @@ export default function LoginPage() {
   return (
     <main className="container-mobile flex min-h-dvh flex-col items-center justify-center">
       <div className="mb-8 text-center">
+        <img src="/logo.png" alt="Lovecoin" className="mx-auto mb-4 h-16 w-16" />
         <h1 className="mb-2 text-3xl font-bold tracking-tight">LOVECOIN</h1>
         <p className="text-neutral-400">Connect your wallet to continue</p>
       </div>

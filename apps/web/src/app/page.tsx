@@ -16,6 +16,7 @@ export default function Home() {
 
   return (
     <main className="container-mobile flex min-h-dvh flex-col items-center justify-center">
+      <img src="/logo.png" alt="Lovecoin" className="mb-4 h-20 w-20" />
       <h1 className="mb-4 text-4xl font-bold tracking-tight">LOVECOIN</h1>
       <p className="mb-8 text-center text-neutral-400">
         Where every message means something

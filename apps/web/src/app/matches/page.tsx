@@ -102,7 +102,7 @@ export default function MatchesPage() {
 
       {status === "empty" ? (
         <div className="flex flex-1 flex-col items-center justify-center py-20">
-          <div className="mb-4 text-6xl text-neutral-700">&hearts;</div>
+          <img src="/logo.png" alt="Lovecoin" className="mb-4 h-16 w-16 opacity-50" />
           <p className="mb-2 text-lg font-medium text-neutral-300">No matches yet</p>
           <p className="mb-6 text-sm text-neutral-500">
             Keep swiping to find your match

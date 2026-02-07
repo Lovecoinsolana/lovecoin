@@ -394,11 +394,9 @@ export default function DiscoverPage() {
             <button
               onClick={handleLike}
               disabled={status === "swiping"}
-              className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-brand-500 to-brand-600 text-white shadow-lg shadow-brand-500/40 transition-all hover:scale-110 hover:shadow-brand-500/60 disabled:opacity-50"
+              className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-brand-500 to-brand-600 shadow-lg shadow-brand-500/40 transition-all hover:scale-110 hover:shadow-brand-500/60 disabled:opacity-50"
             >
-              <svg className="h-7 w-7" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-              </svg>
+              <img src="/logo.png" alt="Like" className="h-8 w-8" />
             </button>
           </div>
         </div>
@@ -413,8 +411,8 @@ function Header() {
   return (
     <header className="flex items-center justify-between px-4 py-3">
       <div className="flex items-center gap-2">
-        <span className="text-2xl">&#128156;</span>
-        <span className="text-xl font-bold tracking-tight text-brand-500">LOVE+</span>
+        <img src="/logo.png" alt="Lovecoin" className="h-8 w-8" />
+        <span className="text-xl font-bold tracking-tight text-brand-500">LOVECOIN</span>
       </div>
       <div className="flex items-center gap-3">
         <span className="flex items-center gap-1 rounded-full border border-green-500/30 bg-green-500/10 px-3 py-1 text-xs font-medium text-green-400">
