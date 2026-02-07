@@ -15,12 +15,34 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://lovecoin.fun"),
   title: "LOVECOIN",
-  description: "Where every message means something",
+  description: "Web3 Dating Platform - Connect wallets, find love, powered by Solana",
+  manifest: "/manifest.json",
   icons: {
     icon: "/logo.png",
     shortcut: "/logo.png",
     apple: "/logo.png",
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Lovecoin",
+  },
+  formatDetection: {
+    telephone: false,
+  },
+  openGraph: {
+    title: "LOVECOIN",
+    description: "Web3 Dating Platform - Connect wallets, find love, powered by Solana",
+    url: "https://lovecoin.fun",
+    siteName: "Lovecoin",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "LOVECOIN",
+    description: "Web3 Dating Platform - Connect wallets, find love, powered by Solana",
   },
 };
 
@@ -30,6 +52,7 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   themeColor: "#ec4899",
+  viewportFit: "cover",
 };
 
 export default function RootLayout({

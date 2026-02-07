@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode, useMemo } from "react";
+import { ReactNode, useMemo, useEffect } from "react";
 import {
   ConnectionProvider,
   WalletProvider,
@@ -17,11 +17,30 @@ import { ThemeProvider } from "@/context/ThemeContext";
 // Import wallet adapter styles
 import "@solana/wallet-adapter-react-ui/styles.css";
 
+// Register service worker for PWA
+function useServiceWorker() {
+  useEffect(() => {
+    if (typeof window !== "undefined" && "serviceWorker" in navigator) {
+      navigator.serviceWorker
+        .register("/sw.js")
+        .then((registration) => {
+          console.log("SW registered:", registration.scope);
+        })
+        .catch((error) => {
+          console.log("SW registration failed:", error);
+        });
+    }
+  }, []);
+}
+
 interface ProvidersProps {
   children: ReactNode;
 }
 
 export function Providers({ children }: ProvidersProps) {
+  // Register service worker for PWA
+  useServiceWorker();
+
   // Use environment variable or fallback to mainnet
   const endpoint = useMemo(() => {
     const rpcUrl = process.env.NEXT_PUBLIC_SOLANA_RPC_URL;
