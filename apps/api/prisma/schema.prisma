@@ -28,6 +28,7 @@ model User {
   blocksReceived  Block[]        @relation("BlocksReceived")
   reportsCreated  Report[]       @relation("ReportsCreated")
   reportsReceived Report[]       @relation("ReportsReceived")
+  listings        Listing[]
 
   @@map("users")
 }
@@ -186,4 +187,56 @@ model Report {
   reported   User         @relation("ReportsReceived", fields: [reportedId], references: [id], onDelete: Cascade)
 
   @@map("reports")
+}
+
+// Marketplace Listings
+enum ListingStatus {
+  ACTIVE
+  SOLD
+  DELETED
+}
+
+enum ListingCategory {
+  ELECTRONICS
+  FASHION
+  HOME
+  SPORTS
+  VEHICLES
+  COLLECTIBLES
+  SERVICES
+  OTHER
+}
+
+model Listing {
+  id          String          @id @default(uuid())
+  sellerId    String          @map("seller_id")
+  title       String
+  description String?
+  category    ListingCategory @default(OTHER)
+  priceSol    Float           @map("price_sol")
+  city        String?
+  country     String?
+  status      ListingStatus   @default(ACTIVE)
+  createdAt   DateTime        @default(now()) @map("created_at")
+  updatedAt   DateTime        @updatedAt @map("updated_at")
+
+  seller      User            @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  photos      ListingPhoto[]
+
+  @@index([status, createdAt])
+  @@index([sellerId])
+  @@index([category])
+  @@map("listings")
+}
+
+model ListingPhoto {
+  id         String   @id @default(uuid())
+  listingId  String   @map("listing_id")
+  storageKey String   @map("storage_key")
+  position   Int
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  listing    Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@map("listing_photos")
 }

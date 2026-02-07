@@ -272,6 +272,73 @@ export const api = {
     getReportReasons: () =>
       fetchApi<{ reasons: ReportReason[] }>("/users/report-reasons"),
   },
+
+  listings: {
+    getAll: (params?: { category?: string; city?: string; minPrice?: number; maxPrice?: number; limit?: number; offset?: number }) => {
+      const searchParams = new URLSearchParams();
+      if (params?.category) searchParams.set("category", params.category);
+      if (params?.city) searchParams.set("city", params.city);
+      if (params?.minPrice) searchParams.set("minPrice", params.minPrice.toString());
+      if (params?.maxPrice) searchParams.set("maxPrice", params.maxPrice.toString());
+      if (params?.limit) searchParams.set("limit", params.limit.toString());
+      if (params?.offset) searchParams.set("offset", params.offset.toString());
+      const query = searchParams.toString();
+      return fetchApi<{ listings: Listing[]; total: number; hasMore: boolean }>(
+        `/listings${query ? `?${query}` : ""}`
+      );
+    },
+
+    get: (id: string) =>
+      fetchApi<{ listing: Listing }>(`/listings/${id}`),
+
+    getMy: () =>
+      fetchApi<{ listings: Listing[] }>("/listings/my"),
+
+    create: (data: CreateListingInput) =>
+      fetchApi<{ listing: Listing }>("/listings", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+
+    update: (id: string, data: UpdateListingInput) =>
+      fetchApi<{ listing: Listing }>(`/listings/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify(data),
+      }),
+
+    delete: (id: string) =>
+      fetchApi<{ success: boolean }>(`/listings/${id}`, {
+        method: "DELETE",
+        body: JSON.stringify({}),
+      }),
+
+    uploadPhoto: async (listingId: string, file: File) => {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
+      const headers: Record<string, string> = {};
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+
+      const response = await fetch(`${API_BASE}/listings/${listingId}/photos`, {
+        method: "POST",
+        headers,
+        body: formData,
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        return { data: null, error: data.error || "Upload failed" };
+      }
+      return { data: data as { photo: ListingPhoto }, error: null };
+    },
+
+    deletePhoto: (listingId: string, photoId: string) =>
+      fetchApi<{ success: boolean }>(`/listings/${listingId}/photos/${photoId}`, {
+        method: "DELETE",
+        body: JSON.stringify({}),
+      }),
+  },
 };
 
 // Report types
@@ -426,4 +493,63 @@ export interface Message {
   paymentTx: string;
   sentAt: string;
   readAt: string | null;
+}
+
+// Marketplace types
+export type ListingCategory =
+  | "ELECTRONICS"
+  | "FASHION"
+  | "HOME"
+  | "SPORTS"
+  | "VEHICLES"
+  | "COLLECTIBLES"
+  | "SERVICES"
+  | "OTHER";
+
+export type ListingStatus = "ACTIVE" | "SOLD" | "DELETED";
+
+export interface ListingPhoto {
+  id: string;
+  url: string;
+  position: number;
+}
+
+export interface Listing {
+  id: string;
+  title: string;
+  description: string | null;
+  category: ListingCategory;
+  priceSol: number;
+  city: string | null;
+  country: string | null;
+  status: ListingStatus;
+  createdAt: string;
+  updatedAt?: string;
+  seller: {
+    id: string;
+    displayName: string;
+    walletAddress: string;
+    city?: string | null;
+    country?: string | null;
+  };
+  photos: ListingPhoto[];
+}
+
+export interface CreateListingInput {
+  title: string;
+  description?: string;
+  category?: ListingCategory;
+  priceSol: number;
+  city?: string;
+  country?: string;
+}
+
+export interface UpdateListingInput {
+  title?: string;
+  description?: string;
+  category?: ListingCategory;
+  priceSol?: number;
+  city?: string;
+  country?: string;
+  status?: "ACTIVE" | "SOLD";
 }

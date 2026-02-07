@@ -14,6 +14,7 @@ import { discoveryRoutes } from "./routes/discovery.js";
 import { matchesRoutes } from "./routes/matches.js";
 import { conversationsRoutes } from "./routes/conversations.js";
 import { usersRoutes } from "./routes/users.js";
+import { listingsRoutes } from "./routes/listings.js";
 import { requireVerified } from "./lib/middleware.js";
 import { setupWebSocket } from "./lib/websocket.js";
 import { registerRateLimiting } from "./lib/rate-limit.js";
@@ -89,6 +90,7 @@ await app.register(discoveryRoutes, { prefix: "/discovery" });
 await app.register(matchesRoutes, { prefix: "/matches" });
 await app.register(conversationsRoutes, { prefix: "/conversations" });
 await app.register(usersRoutes, { prefix: "/users" });
+await app.register(listingsRoutes, { prefix: "/listings" });
 
 // WebSocket setup
 await setupWebSocket(app);
