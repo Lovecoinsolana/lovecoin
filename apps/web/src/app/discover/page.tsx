@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { api, DiscoveryProfile } from "@/lib/api";
 import { isAuthenticated, removeToken } from "@/lib/auth";
+import { BottomNav } from "@/components/BottomNav";
 
 type PageStatus = "loading" | "ready" | "empty" | "swiping" | "match";
 
@@ -201,6 +202,7 @@ export default function DiscoverPage() {
             </button>
           </div>
         </div>
+        <BottomNav />
       </main>
     );
   }
@@ -271,7 +273,7 @@ export default function DiscoverPage() {
           </div>
 
           {/* Action Buttons */}
-          <div className="flex justify-center gap-6 py-6 safe-bottom">
+          <div className="flex justify-center gap-6 py-6">
             <button
               onClick={handlePass}
               disabled={status === "swiping"}
@@ -289,6 +291,8 @@ export default function DiscoverPage() {
           </div>
         </div>
       )}
+
+      <BottomNav />
     </main>
   );
 }

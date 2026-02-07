@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { api, CreateProfileInput, UpdateProfileInput, PhotoUploadResponse } from "@/lib/api";
 import { isAuthenticated, removeToken } from "@/lib/auth";
+import { BottomNav } from "@/components/BottomNav";
 
 type PageStatus = "loading" | "creating" | "editing" | "saving" | "error";
 
@@ -576,6 +577,8 @@ export default function ProfilePage() {
       >
         Sign out
       </button>
+
+      <BottomNav />
     </main>
   );
 }

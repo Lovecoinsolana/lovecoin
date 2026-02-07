@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuth } from "@/hooks/useAuth";
+import { BottomNav } from "@/components/BottomNav";
 
 export default function ChatPage() {
   const { user, loading } = useAuth({ requireVerified: true, requireProfile: true });
@@ -29,6 +30,7 @@ export default function ChatPage() {
           No conversations yet
         </div>
       </div>
+      <BottomNav />
     </main>
   );
 }

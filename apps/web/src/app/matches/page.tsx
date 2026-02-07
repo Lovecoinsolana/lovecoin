@@ -7,6 +7,7 @@ import { api, Match } from "@/lib/api";
 import { isAuthenticated, removeToken } from "@/lib/auth";
 import { useToast } from "@/components/Toast";
 import { MatchCardSkeleton } from "@/components/Skeleton";
+import { BottomNav } from "@/components/BottomNav";
 
 type PageStatus = "loading" | "ready" | "empty";
 
@@ -170,42 +171,7 @@ export default function MatchesPage() {
         </div>
       )}
 
-      {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 border-t border-neutral-800 bg-neutral-950 safe-bottom">
-        <div className="container-mobile flex justify-around py-3">
-          <Link
-            href="/discover"
-            className="flex flex-col items-center gap-1 text-neutral-500 hover:text-white"
-          >
-            <span className="text-xl">&hearts;</span>
-            <span className="text-xs">Discover</span>
-          </Link>
-          <Link
-            href="/matches"
-            className="flex flex-col items-center gap-1 text-brand-500"
-          >
-            <span className="text-xl">&#9733;</span>
-            <span className="text-xs">Matches</span>
-          </Link>
-          <Link
-            href="/chat"
-            className="flex flex-col items-center gap-1 text-neutral-500 hover:text-white"
-          >
-            <span className="text-xl">&#9993;</span>
-            <span className="text-xs">Chat</span>
-          </Link>
-          <Link
-            href="/profile"
-            className="flex flex-col items-center gap-1 text-neutral-500 hover:text-white"
-          >
-            <span className="text-xl">&#9679;</span>
-            <span className="text-xs">Profile</span>
-          </Link>
-        </div>
-      </nav>
-
-      {/* Spacer for bottom nav */}
-      <div className="h-20" />
+      <BottomNav />
     </main>
   );
 }
