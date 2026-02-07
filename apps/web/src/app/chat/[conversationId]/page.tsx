@@ -404,7 +404,7 @@ export default function ChatConversationPage() {
             onKeyDown={handleKeyDown}
             placeholder="Type a message..."
             disabled={sending || !connected}
-            className="flex-1 rounded-full border border-border bg-background px-4 py-3 text-sm text-text placeholder:text-text-light focus:outline-none focus:border-primary disabled:opacity-50"
+            className="flex-1 rounded-full border border-neutral-300 bg-white px-4 py-3 text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 disabled:opacity-50"
           />
           <button
             onClick={handleSendMessage}
