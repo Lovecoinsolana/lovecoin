@@ -249,7 +249,7 @@ export async function conversationsRoutes(app: FastifyInstance) {
     }
   );
 
-  // POST /conversations/:id/messages - Send a message (requires payment)
+  // POST /conversations/:id/messages - Send a message (FREE - no payment required)
   app.post(
     "/:id/messages",
     messagingRateLimit,
@@ -260,15 +260,8 @@ export async function conversationsRoutes(app: FastifyInstance) {
       }>,
       reply: FastifyReply
     ) => {
-      const { userId, walletAddress } = request.user as JwtPayload;
+      const { userId } = request.user as JwtPayload;
       const { id } = request.params;
-
-      // Get transaction signature from header
-      const txSignature = request.headers["x-payment"] as string;
-
-      if (!txSignature) {
-        return reply.status(400).send({ error: "Missing X-PAYMENT header" });
-      }
 
       // Validate request body
       let data;
@@ -288,118 +281,15 @@ export async function conversationsRoutes(app: FastifyInstance) {
         return reply.status(404).send({ error: "Conversation not found" });
       }
 
-      // Check if transaction was already used
-      const existingMessage = await prisma.message.findFirst({
-        where: { paymentTx: txSignature },
-      });
-
-      if (existingMessage) {
-        return reply.status(400).send({ error: "Transaction already used" });
-      }
-
-      // Verify transaction on-chain
-      const tx = await getTransaction(txSignature);
-
-      if (!tx) {
-        return reply.status(400).send({ error: "Transaction not found on-chain" });
-      }
-
-      if (tx.meta?.err) {
-        return reply.status(400).send({ error: "Transaction failed on-chain" });
-      }
-
-      // Parse transaction to verify payment
-      let transferAmount = 0;
-      let sender = "";
-      let recipient = "";
-      let memo = "";
-
-      const instructions = tx.transaction.message.instructions;
-
-      for (const instruction of instructions) {
-        if ("parsed" in instruction) {
-          const parsed = instruction.parsed;
-
-          if (instruction.program === "system" && parsed.type === "transfer") {
-            sender = parsed.info.source;
-            recipient = parsed.info.destination;
-            transferAmount = parsed.info.lamports;
-          }
-
-          if (instruction.program === "spl-memo") {
-            memo = parsed;
-          }
-        }
-
-        // Handle memo as unparsed instruction
-        if ("data" in instruction && !("parsed" in instruction)) {
-          const memoPrograms = [
-            "MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr",
-            "Memo1UhkJRfHyvLMcVucJwxXeuD728EqVDDwQDxFMNo",
-          ];
-          if (memoPrograms.includes(instruction.programId.toString())) {
-            try {
-              memo = Buffer.from(instruction.data, "base64").toString("utf-8");
-            } catch {
-              memo = instruction.data;
-            }
-          }
-        }
-      }
-
-      // Check log messages for memo if not found
-      if (!memo && tx.meta?.logMessages) {
-        for (const log of tx.meta.logMessages) {
-          if (log.includes("Memo (len")) {
-            const memoMatch = log.match(/Memo \(len \d+\): "(.+)"/);
-            if (memoMatch) {
-              memo = memoMatch[1];
-            }
-          }
-        }
-      }
-
-      // Verify sender
-      if (sender !== walletAddress) {
-        return reply.status(400).send({
-          error: "Sender mismatch",
-          details: `Expected ${walletAddress}, got ${sender}`,
-        });
-      }
-
-      // Verify recipient
-      if (recipient !== config.platformWalletAddress) {
-        return reply.status(400).send({
-          error: "Recipient must be platform wallet",
-        });
-      }
-
-      // Verify amount
-      if (transferAmount < config.messageFeeLamports) {
-        return reply.status(400).send({
-          error: "Insufficient payment",
-          details: `Expected ${config.messageFeeLamports} lamports, got ${transferAmount}`,
-        });
-      }
-
-      // Verify memo
-      const expectedMemo = `MSG:${id}`;
-      if (!memo.includes(expectedMemo)) {
-        return reply.status(400).send({
-          error: "Invalid memo",
-          details: `Expected "${expectedMemo}", got "${memo}"`,
-        });
-      }
-
-      // All verifications passed - save message
+      // Save message (FREE - no payment required)
       const message = await prisma.message.create({
         data: {
           conversationId: id,
           senderId: userId,
           contentType: "TEXT",
           content: data.content,
-          paymentTx: txSignature,
-          paymentAmount: BigInt(transferAmount),
+          paymentTx: "free",
+          paymentAmount: BigInt(0),
         },
       });
 

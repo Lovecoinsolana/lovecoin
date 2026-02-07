@@ -2,23 +2,11 @@
 
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useWallet } from "@solana/wallet-adapter-react";
-import {
-  Connection,
-  PublicKey,
-  SystemProgram,
-  Transaction,
-  TransactionInstruction,
-} from "@solana/web3.js";
 import { useAuth } from "@/hooks/useAuth";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { useToast } from "@/components/Toast";
-import { MessageSkeleton, PageLoader } from "@/components/Skeleton";
+import { PageLoader } from "@/components/Skeleton";
 import { api, Message } from "@/lib/api";
-
-const MEMO_PROGRAM_ID = new PublicKey(
-  "MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr"
-);
 
 export default function ChatConversationPage() {
   const params = useParams();
@@ -29,7 +17,6 @@ export default function ChatConversationPage() {
     requireProfile: true,
   });
 
-  const { publicKey, signTransaction, connected } = useWallet();
   const { showToast } = useToast();
 
   const [otherUser, setOtherUser] = useState<{
@@ -43,11 +30,28 @@ export default function ChatConversationPage() {
 
   const [messageText, setMessageText] = useState("");
   const [sending, setSending] = useState(false);
-  const [paymentError, setPaymentError] = useState<string | null>(null);
+
+  // Theme state - default to dark
+  const [isDarkMode, setIsDarkMode] = useState(true);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const hasJoinedRoom = useRef(false);
+
+  // Load theme preference from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem("chat-theme");
+    if (saved) {
+      setIsDarkMode(saved === "dark");
+    }
+  }, []);
+
+  // Save theme preference
+  const toggleTheme = () => {
+    const newTheme = !isDarkMode;
+    setIsDarkMode(newTheme);
+    localStorage.setItem("chat-theme", newTheme ? "dark" : "light");
+  };
 
   // Handle incoming WebSocket messages
   const handleWsMessage = useCallback(
@@ -65,10 +69,8 @@ export default function ChatConversationPage() {
           };
         };
 
-        // Only handle messages for this conversation
         if (payload.conversationId !== conversationId) return;
 
-        // Avoid duplicates - check if message already exists
         setMessages((prev) => {
           const exists = prev.some((m) => m.id === payload.message.id);
           if (exists) return prev;
@@ -91,13 +93,11 @@ export default function ChatConversationPage() {
     [conversationId, user?.id]
   );
 
-  // WebSocket connection
   const { isConnected, isAuthenticated, joinRoom, leaveRoom } = useWebSocket({
     onMessage: handleWsMessage,
     autoConnect: true,
   });
 
-  // Join conversation room when authenticated
   useEffect(() => {
     if (isAuthenticated && conversationId && !hasJoinedRoom.current) {
       joinRoom(`conversation:${conversationId}`);
@@ -112,7 +112,6 @@ export default function ChatConversationPage() {
     };
   }, [isAuthenticated, conversationId, joinRoom, leaveRoom]);
 
-  // Fetch conversation and messages
   const fetchConversation = useCallback(async () => {
     if (!conversationId) return;
 
@@ -138,16 +137,14 @@ export default function ChatConversationPage() {
     }
   }, [authLoading, user, fetchConversation]);
 
-  // Scroll to bottom on new messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Fallback polling (only when WebSocket is not connected)
+  // Fallback polling
   useEffect(() => {
     if (!conversationId || authLoading || !user) return;
 
-    // If WebSocket is connected, use longer polling interval as fallback
     const pollInterval = isConnected ? 30000 : 5000;
 
     const interval = setInterval(async () => {
@@ -160,94 +157,28 @@ export default function ChatConversationPage() {
     return () => clearInterval(interval);
   }, [conversationId, authLoading, user, isConnected]);
 
+  // Send message - FREE (no payment required)
   const handleSendMessage = async () => {
-    if (!messageText.trim() || !publicKey || !signTransaction || sending) {
+    if (!messageText.trim() || sending) {
       return;
     }
 
     setSending(true);
-    setPaymentError(null);
 
     try {
-      // Get payment details
-      const { data: paymentData, error: paymentDetailsError } =
-        await api.conversations.getPaymentDetails(conversationId);
-
-      if (paymentDetailsError || !paymentData) {
-        const errorMsg = paymentDetailsError || "Failed to get payment details";
-        setPaymentError(errorMsg);
-        showToast(errorMsg, "error");
-        setSending(false);
-        return;
-      }
-
-      const { recipientWallet, amountLamports, memo } = paymentData;
-
-      // Create transaction
-      const connection = new Connection(
-        process.env.NEXT_PUBLIC_SOLANA_RPC_URL ||
-          "https://api.mainnet-beta.solana.com"
-      );
-
-      const { blockhash, lastValidBlockHeight } =
-        await connection.getLatestBlockhash();
-
-      const transaction = new Transaction({
-        feePayer: publicKey,
-        blockhash,
-        lastValidBlockHeight,
-      });
-
-      // Add transfer instruction
-      transaction.add(
-        SystemProgram.transfer({
-          fromPubkey: publicKey,
-          toPubkey: new PublicKey(recipientWallet),
-          lamports: amountLamports,
-        })
-      );
-
-      // Add memo instruction
-      transaction.add(
-        new TransactionInstruction({
-          keys: [],
-          programId: MEMO_PROGRAM_ID,
-          data: Buffer.from(memo, "utf-8"),
-        })
-      );
-
-      // Sign transaction
-      const signedTransaction = await signTransaction(transaction);
-
-      // Send transaction
-      const txSignature = await connection.sendRawTransaction(
-        signedTransaction.serialize()
-      );
-
-      // Wait for confirmation
-      await connection.confirmTransaction({
-        signature: txSignature,
-        blockhash,
-        lastValidBlockHeight,
-      });
-
-      // Send message to API
       const { data: messageData, error: messageError } =
         await api.conversations.sendMessage(
           conversationId,
           messageText.trim(),
-          txSignature
+          "free" // No payment tx needed
         );
 
       if (messageError) {
-        setPaymentError(messageError);
         showToast(messageError, "error");
         setSending(false);
         return;
       }
 
-      // Message will be added via WebSocket broadcast
-      // But add it immediately for better UX if WS is slow
       if (messageData?.message) {
         setMessages((prev) => {
           const exists = prev.some((m) => m.id === messageData.message.id);
@@ -260,7 +191,6 @@ export default function ChatConversationPage() {
     } catch (err: unknown) {
       const errorMessage =
         err instanceof Error ? err.message : "Failed to send message";
-      setPaymentError(errorMessage);
       showToast(errorMessage, "error");
     } finally {
       setSending(false);
@@ -284,7 +214,7 @@ export default function ChatConversationPage() {
         <p className="text-red-400 mb-4">{error}</p>
         <button
           onClick={() => router.push("/matches")}
-          className="text-primary hover:underline"
+          className="text-brand-500 hover:underline"
         >
           Back to Matches
         </button>
@@ -292,14 +222,29 @@ export default function ChatConversationPage() {
     );
   }
 
+  // Theme classes
+  const theme = {
+    bg: isDarkMode ? "bg-neutral-950" : "bg-gray-50",
+    header: isDarkMode ? "bg-neutral-900 border-neutral-800" : "bg-white border-gray-200",
+    headerText: isDarkMode ? "text-white" : "text-gray-900",
+    headerSubtext: isDarkMode ? "text-neutral-400" : "text-gray-500",
+    messageArea: isDarkMode ? "bg-neutral-950" : "bg-gray-100",
+    myMessage: "bg-brand-500 text-white",
+    theirMessage: isDarkMode ? "bg-neutral-800 text-white" : "bg-white text-gray-900 border border-gray-200",
+    inputBg: isDarkMode ? "bg-neutral-800 border-neutral-700 text-white placeholder:text-neutral-500" : "bg-white border-gray-300 text-gray-900 placeholder:text-gray-400",
+    footer: isDarkMode ? "bg-neutral-900 border-neutral-800" : "bg-white border-gray-200",
+    emptyText: isDarkMode ? "text-neutral-500" : "text-gray-400",
+    timestamp: isDarkMode ? "text-neutral-400" : "text-gray-500",
+  };
+
   return (
-    <main className="flex h-dvh flex-col bg-background">
+    <main className={`flex h-dvh flex-col ${theme.bg}`}>
       {/* Header */}
-      <header className="border-b border-border px-4 py-3 flex-shrink-0">
+      <header className={`border-b px-4 py-3 flex-shrink-0 ${theme.header}`}>
         <div className="flex items-center gap-3">
           <button
             onClick={() => router.push("/matches")}
-            className="text-text-light hover:text-text transition-colors"
+            className={`${theme.headerSubtext} hover:${theme.headerText} transition-colors`}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -316,19 +261,45 @@ export default function ChatConversationPage() {
               />
             </svg>
           </button>
-          <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-semibold">
+          <div className="h-10 w-10 rounded-full bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center text-white font-semibold">
             {otherUser?.displayName?.[0]?.toUpperCase() || "?"}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="font-medium text-text truncate">
+            <p className={`font-medium truncate ${theme.headerText}`}>
               {otherUser?.displayName || "Unknown"}
             </p>
-            <p className="text-xs text-text-light font-mono truncate">
+            <p className={`text-xs font-mono truncate ${theme.headerSubtext}`}>
               {otherUser?.walletAddress
                 ? `${otherUser.walletAddress.slice(0, 4)}...${otherUser.walletAddress.slice(-4)}`
                 : ""}
             </p>
           </div>
+
+          {/* Theme Toggle */}
+          <button
+            onClick={toggleTheme}
+            className={`p-2 rounded-full transition-colors ${
+              isDarkMode 
+                ? "bg-neutral-800 text-yellow-400 hover:bg-neutral-700" 
+                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+            }`}
+            title={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
+          >
+            {isDarkMode ? (
+              <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  fillRule="evenodd"
+                  d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            ) : (
+              <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+              </svg>
+            )}
+          </button>
+
           {/* Connection indicator */}
           <div
             className={`h-2 w-2 rounded-full ${
@@ -340,9 +311,9 @@ export default function ChatConversationPage() {
       </header>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+      <div className={`flex-1 overflow-y-auto p-4 space-y-3 ${theme.messageArea}`}>
         {messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-text-light">
+          <div className={`flex flex-col items-center justify-center h-full ${theme.emptyText}`}>
             <p className="text-center text-sm">No messages yet.</p>
             <p className="text-center text-xs mt-1 opacity-70">
               Send the first message to start the conversation.
@@ -357,27 +328,22 @@ export default function ChatConversationPage() {
               <div
                 className={`max-w-[75%] rounded-2xl px-4 py-2 ${
                   message.isFromMe
-                    ? "bg-primary text-white rounded-br-sm"
-                    : "bg-border text-text rounded-bl-sm"
+                    ? `${theme.myMessage} rounded-br-sm`
+                    : `${theme.theirMessage} rounded-bl-sm`
                 }`}
               >
                 <p className="text-sm whitespace-pre-wrap break-words">
                   {message.content}
                 </p>
                 <div
-                  className={`text-[10px] mt-1 flex items-center gap-1 ${
-                    message.isFromMe ? "text-white/70" : "text-text-light"
+                  className={`text-[10px] mt-1 ${
+                    message.isFromMe ? "text-white/70" : theme.timestamp
                   }`}
                 >
-                  <span>
-                    {new Date(message.sentAt).toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </span>
-                  {message.isFromMe && message.readAt && (
-                    <span className="text-xs">Read</span>
-                  )}
+                  {new Date(message.sentAt).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
                 </div>
               </div>
             </div>
@@ -386,15 +352,8 @@ export default function ChatConversationPage() {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Payment error */}
-      {paymentError && (
-        <div className="px-4 py-2 bg-red-500/10 border-t border-red-500/20">
-          <p className="text-red-400 text-sm text-center">{paymentError}</p>
-        </div>
-      )}
-
       {/* Input */}
-      <footer className="border-t border-border p-4 flex-shrink-0">
+      <footer className={`border-t p-4 flex-shrink-0 ${theme.footer}`}>
         <div className="flex gap-2">
           <input
             ref={inputRef}
@@ -403,32 +362,21 @@ export default function ChatConversationPage() {
             onChange={(e) => setMessageText(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Type a message..."
-            disabled={sending || !connected}
-            className="flex-1 rounded-full border border-neutral-300 bg-white px-4 py-3 text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 disabled:opacity-50"
+            disabled={sending}
+            className={`flex-1 rounded-full border px-4 py-3 text-sm focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 disabled:opacity-50 ${theme.inputBg}`}
           />
           <button
             onClick={handleSendMessage}
-            disabled={!messageText.trim() || sending || !connected}
-            className="rounded-full bg-primary px-5 py-3 text-sm font-medium text-white transition-all hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            disabled={!messageText.trim() || sending}
+            className="rounded-full bg-brand-500 px-6 py-3 text-sm font-medium text-white transition-all hover:bg-brand-600 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {sending ? (
               <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
             ) : (
-              <>
-                <span>Send</span>
-                <span className="text-xs opacity-80">0.0005</span>
-              </>
+              "Send"
             )}
           </button>
         </div>
-        {!connected && (
-          <p className="text-xs text-text-light text-center mt-2">
-            Connect your wallet to send messages
-          </p>
-        )}
-        <p className="text-xs text-text-light text-center mt-2 opacity-60">
-          Each message costs 0.0005 SOL
-        </p>
       </footer>
     </main>
   );

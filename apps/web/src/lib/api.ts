@@ -221,12 +221,9 @@ export const api = {
         memo: string;
       }>(`/conversations/${conversationId}/payment-details`),
 
-    sendMessage: (conversationId: string, content: string, txSignature: string) =>
+    sendMessage: (conversationId: string, content: string, _txSignature?: string) =>
       fetchApi<{ message: Message }>(`/conversations/${conversationId}/messages`, {
         method: "POST",
-        headers: {
-          "X-PAYMENT": txSignature,
-        },
         body: JSON.stringify({ content }),
       }),
 
