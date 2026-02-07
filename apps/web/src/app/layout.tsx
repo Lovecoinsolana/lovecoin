@@ -38,11 +38,14 @@ export const metadata: Metadata = {
     url: "https://lovecoin.fun",
     siteName: "Lovecoin",
     type: "website",
+    locale: "en_US",
   },
   twitter: {
     card: "summary_large_image",
     title: "LOVECOIN",
     description: "Web3 Dating Platform - Connect wallets, find love, powered by Solana",
+    creator: "@lovecoin",
+    site: "@lovecoin",
   },
 };
 
