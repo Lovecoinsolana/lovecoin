@@ -72,18 +72,16 @@ export async function sendPushToUser(
           },
           notification
         );
-      } catch (error: unknown) {
+      } catch (err: unknown) {
         // If subscription is expired/invalid, remove it
-        if (
-          error instanceof webpush.WebPushError &&
-          (error.statusCode === 404 || error.statusCode === 410)
-        ) {
+        const statusCode = (err as { statusCode?: number })?.statusCode;
+        if (statusCode === 404 || statusCode === 410) {
           await prisma.pushSubscription.delete({
             where: { id: sub.id },
           }).catch(() => {});
         }
         // Log but don't throw - notification failures shouldn't break anything
-        console.error(`Push notification failed for subscription ${sub.id}:`, error);
+        console.error(`Push notification failed for subscription ${sub.id}:`, err);
       }
     });
 
