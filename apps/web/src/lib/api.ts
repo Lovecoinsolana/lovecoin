@@ -550,6 +550,7 @@ export interface Conversation {
     userId: string;
     walletAddress: string;
     displayName: string;
+    primaryPhoto: string | null;
   };
   messages: Message[];
 }

@@ -9,6 +9,21 @@ import { PageLoader } from "@/components/Skeleton";
 import { api, Message } from "@/lib/api";
 import { useTheme } from "@/context/ThemeContext";
 
+const S3_PUBLIC_URL = process.env.NEXT_PUBLIC_S3_URL || "";
+const S3_BUCKET = process.env.NEXT_PUBLIC_S3_BUCKET || "lovecoin-photos";
+const S3_REGION = process.env.NEXT_PUBLIC_S3_REGION || "us-east-1";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+
+function getPhotoUrl(storageKey: string): string {
+  if (storageKey.startsWith("uploads/")) {
+    return `${API_URL}/${storageKey}`;
+  }
+  if (S3_PUBLIC_URL) {
+    return `${S3_PUBLIC_URL}/${storageKey}`;
+  }
+  return `https://${S3_BUCKET}.s3.${S3_REGION}.amazonaws.com/${storageKey}`;
+}
+
 export default function ChatConversationPage() {
   const params = useParams();
   const router = useRouter();
@@ -24,6 +39,7 @@ export default function ChatConversationPage() {
     userId: string;
     walletAddress: string;
     displayName: string;
+    primaryPhoto: string | null;
   } | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [loadingConversation, setLoadingConversation] = useState(true);
@@ -247,8 +263,16 @@ export default function ChatConversationPage() {
               />
             </svg>
           </button>
-          <div className="h-10 w-10 rounded-full bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center text-white font-semibold">
-            {otherUser?.displayName?.[0]?.toUpperCase() || "?"}
+          <div className="h-10 w-10 rounded-full bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center overflow-hidden text-white font-semibold">
+            {otherUser?.primaryPhoto ? (
+              <img
+                src={getPhotoUrl(otherUser.primaryPhoto)}
+                alt={otherUser.displayName}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              otherUser?.displayName?.[0]?.toUpperCase() || "?"
+            )}
           </div>
           <div className="flex-1 min-w-0">
             <p className={`font-medium truncate ${theme.headerText}`}>

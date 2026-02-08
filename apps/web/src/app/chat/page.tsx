@@ -9,6 +9,21 @@ import { BottomNav } from "@/components/BottomNav";
 
 type PageStatus = "loading" | "ready" | "empty";
 
+const S3_PUBLIC_URL = process.env.NEXT_PUBLIC_S3_URL || "";
+const S3_BUCKET = process.env.NEXT_PUBLIC_S3_BUCKET || "lovecoin-photos";
+const S3_REGION = process.env.NEXT_PUBLIC_S3_REGION || "us-east-1";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+
+function getPhotoUrl(storageKey: string): string {
+  if (storageKey.startsWith("uploads/")) {
+    return `${API_URL}/${storageKey}`;
+  }
+  if (S3_PUBLIC_URL) {
+    return `${S3_PUBLIC_URL}/${storageKey}`;
+  }
+  return `https://${S3_BUCKET}.s3.${S3_REGION}.amazonaws.com/${storageKey}`;
+}
+
 export default function ChatPage() {
   const router = useRouter();
   const [status, setStatus] = useState<PageStatus>("loading");
@@ -125,8 +140,16 @@ export default function ChatPage() {
               className="flex items-center gap-3 rounded-xl border border-theme bg-theme-card p-3 transition-colors hover:bg-theme-tertiary"
             >
               {/* Avatar */}
-              <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-500 to-brand-700 text-xl font-bold text-white">
-                {conv.otherUser.displayName.charAt(0)}
+              <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-brand-500 to-brand-700 text-xl font-bold text-white">
+                {conv.otherUser.primaryPhoto ? (
+                  <img
+                    src={getPhotoUrl(conv.otherUser.primaryPhoto)}
+                    alt={conv.otherUser.displayName}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  conv.otherUser.displayName.charAt(0)
+                )}
               </div>
 
               {/* Info */}

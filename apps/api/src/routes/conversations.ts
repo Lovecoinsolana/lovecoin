@@ -136,7 +136,14 @@ export async function conversationsRoutes(app: FastifyInstance) {
       const otherUser = await prisma.user.findUnique({
         where: { id: otherUserId },
         include: {
-          profile: true,
+          profile: {
+            include: {
+              photos: {
+                where: { isPrimary: true },
+                take: 1,
+              },
+            },
+          },
         },
       });
 
@@ -166,6 +173,7 @@ export async function conversationsRoutes(app: FastifyInstance) {
             userId: otherUser?.id,
             walletAddress: otherUser?.walletAddress,
             displayName: otherUser?.profile?.displayName || "Unknown",
+            primaryPhoto: otherUser?.profile?.photos?.[0]?.storageKey || null,
           },
           messages: formattedMessages,
         },
