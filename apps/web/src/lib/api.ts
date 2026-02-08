@@ -381,7 +381,7 @@ export const api = {
     getVapidKey: () =>
       fetchApi<{ publicKey: string; enabled: boolean }>("/notifications/vapid-public-key"),
 
-    subscribe: (subscription: PushSubscriptionJSON) =>
+    subscribe: (subscription: PushSubscriptionData) =>
       fetchApi<{ success: boolean; subscriptionId: string }>("/notifications/subscribe", {
         method: "POST",
         body: JSON.stringify(subscription),
@@ -400,6 +400,16 @@ export const api = {
       }>("/notifications/subscriptions"),
   },
 };
+
+// Push Subscription types (matches browser PushSubscriptionJSON)
+export interface PushSubscriptionData {
+  endpoint: string;
+  expirationTime?: number | null;
+  keys: {
+    p256dh: string;
+    auth: string;
+  };
+}
 
 // Report types
 export type ReportReason =

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { api } from "@/lib/api";
+import { api, PushSubscriptionData } from "@/lib/api";
 
 export type NotificationPermission = "default" | "granted" | "denied" | "unsupported";
 
@@ -96,7 +96,7 @@ export function useNotifications(): UseNotificationsReturn {
       });
 
       // Send subscription to server
-      const subscriptionJSON = subscription.toJSON();
+      const subscriptionJSON = subscription.toJSON() as unknown as PushSubscriptionData;
       const { error: subscribeError } = await api.notifications.subscribe(subscriptionJSON);
 
       if (subscribeError) {
