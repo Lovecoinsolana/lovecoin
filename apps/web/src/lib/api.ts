@@ -376,6 +376,29 @@ export const api = {
         sales: SaleHistory[];
       }>("/listings/sales"),
   },
+
+  notifications: {
+    getVapidKey: () =>
+      fetchApi<{ publicKey: string; enabled: boolean }>("/notifications/vapid-public-key"),
+
+    subscribe: (subscription: PushSubscriptionJSON) =>
+      fetchApi<{ success: boolean; subscriptionId: string }>("/notifications/subscribe", {
+        method: "POST",
+        body: JSON.stringify(subscription),
+      }),
+
+    unsubscribe: (endpoint: string) =>
+      fetchApi<{ success: boolean; deleted: boolean }>("/notifications/unsubscribe", {
+        method: "DELETE",
+        body: JSON.stringify({ endpoint }),
+      }),
+
+    getSubscriptions: () =>
+      fetchApi<{
+        count: number;
+        subscriptions: { id: string; userAgent: string | null; createdAt: string }[];
+      }>("/notifications/subscriptions"),
+  },
 };
 
 // Report types

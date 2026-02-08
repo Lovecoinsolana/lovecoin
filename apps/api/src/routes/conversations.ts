@@ -6,6 +6,7 @@ import { config } from "../config.js";
 import { getTransaction } from "../lib/solana-rpc.js";
 import { broadcastNewMessage } from "../lib/websocket.js";
 import { rateLimitConfigs, keyGenerator } from "../lib/rate-limit.js";
+import { notifyNewMessage } from "../lib/push-notifications.js";
 
 const LAMPORTS_PER_SOL = 1_000_000_000;
 
@@ -308,6 +309,25 @@ export async function conversationsRoutes(app: FastifyInstance) {
         paymentTx: message.paymentTx,
         sentAt: message.sentAt,
       });
+
+      // Send push notification to recipient (non-blocking)
+      const recipientId = conversation.match.userAId === userId 
+        ? conversation.match.userBId 
+        : conversation.match.userAId;
+      
+      // Get sender name for notification
+      const senderProfile = await prisma.profile.findUnique({
+        where: { userId },
+        select: { displayName: true },
+      });
+      
+      // Fire and forget - don't await, don't let errors affect response
+      notifyNewMessage(
+        recipientId,
+        senderProfile?.displayName || "Someone",
+        id,
+        data.content
+      ).catch(() => {}); // Silently ignore errors
 
       return reply.status(201).send({
         message: {

@@ -6,6 +6,7 @@ import { useWallet } from "@solana/wallet-adapter-react";
 import { api, CreateProfileInput, UpdateProfileInput, PhotoUploadResponse } from "@/lib/api";
 import { isAuthenticated, removeToken } from "@/lib/auth";
 import { BottomNav } from "@/components/BottomNav";
+import { NotificationToggle } from "@/components/NotificationToggle";
 
 type PageStatus = "loading" | "creating" | "editing" | "saving" | "error";
 
@@ -545,6 +546,14 @@ export default function ProfilePage() {
             />
           </div>
         </div>
+
+        {/* Settings Section */}
+        {!isCreating && (
+          <div className="rounded-xl border border-neutral-800 bg-neutral-900 p-4">
+            <h3 className="mb-2 text-sm font-medium">Settings</h3>
+            <NotificationToggle />
+          </div>
+        )}
 
         {/* Wallet Info */}
         <div className="rounded-xl border border-neutral-800 bg-neutral-900 p-4">

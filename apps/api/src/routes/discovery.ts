@@ -2,6 +2,7 @@ import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { prisma } from "../lib/prisma.js";
 import { JwtPayload } from "../lib/jwt.js";
 import { rateLimitConfigs, keyGenerator } from "../lib/rate-limit.js";
+import { notifyNewMatch } from "../lib/push-notifications.js";
 
 export async function discoveryRoutes(app: FastifyInstance) {
   // Rate limiting for discovery endpoints
@@ -209,6 +210,23 @@ export async function discoveryRoutes(app: FastifyInstance) {
 
           isMatch = true;
           matchId = match.id;
+
+          // Send push notifications to both users (non-blocking)
+          // Get user names for notification
+          const [currentUserProfile, targetUserProfile] = await Promise.all([
+            prisma.profile.findUnique({ where: { userId: currentUserId }, select: { displayName: true } }),
+            prisma.profile.findUnique({ where: { userId: targetUserId }, select: { displayName: true } }),
+          ]);
+
+          // Notify both users - wrapped in try-catch so failure doesn't affect response
+          try {
+            await Promise.allSettled([
+              notifyNewMatch(currentUserId, targetUserProfile?.displayName || "Someone"),
+              notifyNewMatch(targetUserId, currentUserProfile?.displayName || "Someone"),
+            ]);
+          } catch (e) {
+            // Silently ignore notification errors
+          }
         }
       }
 

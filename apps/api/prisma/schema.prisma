@@ -31,6 +31,7 @@ model User {
   listings        Listing[]
   purchasesAsBuyer  Purchase[]   @relation("PurchasesBuyer")
   purchasesAsSeller Purchase[]   @relation("PurchasesSeller")
+  pushSubscriptions PushSubscription[]
 
   @@map("users")
 }
@@ -262,4 +263,20 @@ model ListingPhoto {
   listing    Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
 
   @@map("listing_photos")
+}
+
+// Push Notification Subscriptions
+model PushSubscription {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  endpoint  String   @unique
+  p256dh    String   // Public key for encryption
+  auth      String   // Auth secret for encryption
+  userAgent String?  @map("user_agent")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("push_subscriptions")
 }
