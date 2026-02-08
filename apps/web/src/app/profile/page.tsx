@@ -20,8 +20,14 @@ const LOOKING_FOR_OPTIONS = ["Men", "Women", "Everyone"];
 const S3_PUBLIC_URL = process.env.NEXT_PUBLIC_S3_URL || "";
 const S3_BUCKET = process.env.NEXT_PUBLIC_S3_BUCKET || "lovecoin-photos";
 const S3_REGION = process.env.NEXT_PUBLIC_S3_REGION || "us-east-1";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
 function getPhotoUrl(storageKey: string): string {
+  // Check if it's a local upload (starts with "uploads/")
+  if (storageKey.startsWith("uploads/")) {
+    return `${API_URL}/${storageKey}`;
+  }
+  // S3 URL
   if (S3_PUBLIC_URL) {
     return `${S3_PUBLIC_URL}/${storageKey}`;
   }
