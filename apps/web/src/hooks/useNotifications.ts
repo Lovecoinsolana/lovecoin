@@ -90,9 +90,10 @@ export function useNotifications(): UseNotificationsReturn {
       const registration = await navigator.serviceWorker.ready;
 
       // Subscribe to push manager
+      // Pass VAPID key as string - modern browsers accept base64 URL-encoded strings directly
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(vapidData.publicKey),
+        applicationServerKey: vapidData.publicKey,
       });
 
       // Send subscription to server
@@ -153,22 +154,4 @@ export function useNotifications(): UseNotificationsReturn {
     subscribe,
     unsubscribe,
   };
-}
-
-/**
- * Convert base64 VAPID key to Uint8Array for push subscription
- */
-function urlBase64ToUint8Array(base64String: string): Uint8Array {
-  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
-  const base64 = (base64String + padding)
-    .replace(/-/g, "+")
-    .replace(/_/g, "/");
-
-  const rawData = window.atob(base64);
-  const outputArray = new Uint8Array(rawData.length);
-
-  for (let i = 0; i < rawData.length; ++i) {
-    outputArray[i] = rawData.charCodeAt(i);
-  }
-  return outputArray;
 }
