@@ -3,9 +3,9 @@
     "relation": ["delegate_permission/common.handle_all_urls"],
     "target": {
       "namespace": "android_app",
-      "package_name": "fun.lovecoin.app",
+      "package_name": "fun.lovecoin.twa",
       "sha256_cert_fingerprints": [
-        "REPLACE_WITH_YOUR_SIGNING_KEY_FINGERPRINT"
+        "DF:32:60:99:3E:12:A0:BE:20:5E:FB:5F:07:5A:2E:6A:1D:FD:60:71:BC:05:3A:3F:79:C9:7D:4C:63:25:9B:E9"
       ]
     }
   }
