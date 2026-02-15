@@ -1,0 +1,65 @@
+{
+  "packageId": "fun.lovecoin.app",
+  "host": "lovecoin.fun",
+  "name": "Lovecoin",
+  "launcherName": "Lovecoin",
+  "display": "standalone",
+  "themeColor": "#ec4899",
+  "navigationColor": "#0a0a0a",
+  "navigationColorDark": "#0a0a0a",
+  "navigationDividerColor": "#0a0a0a",
+  "navigationDividerColorDark": "#0a0a0a",
+  "backgroundColor": "#0a0a0a",
+  "enableNotifications": true,
+  "startUrl": "/",
+  "iconUrl": "https://lovecoin.fun/logo.png",
+  "maskableIconUrl": "https://lovecoin.fun/logo.png",
+  "monochromeIconUrl": "https://lovecoin.fun/logo.png",
+  "splashScreenFadeOutDuration": 300,
+  "signingKey": {
+    "path": "./lovecoin-keystore.jks",
+    "alias": "lovecoin"
+  },
+  "appVersionCode": 1,
+  "appVersionName": "1.0.0",
+  "shortcuts": [
+    {
+      "name": "Discover",
+      "shortName": "Discover",
+      "url": "/discover",
+      "icons": []
+    },
+    {
+      "name": "Matches",
+      "shortName": "Matches", 
+      "url": "/matches",
+      "icons": []
+    },
+    {
+      "name": "Shop",
+      "shortName": "Shop",
+      "url": "/shop",
+      "icons": []
+    }
+  ],
+  "generatorApp": "bubblewrap-cli",
+  "webManifestUrl": "https://lovecoin.fun/manifest.json",
+  "fallbackType": "customtabs",
+  "features": {
+    "locationDelegation": {
+      "enabled": false
+    },
+    "playBilling": {
+      "enabled": false
+    }
+  },
+  "alphaDependencies": {
+    "enabled": false
+  },
+  "enableSiteSettingsShortcut": true,
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "fullScopeUrl": "https://lovecoin.fun/",
+  "minSdkVersion": 23,
+  "orientation": "portrait"
+}

@@ -1,0 +1,11 @@
+# Signing keys - NEVER commit these!
+*.jks
+*.keystore
+
+# Build outputs
+*.apk
+*.aab
+
+# Bubblewrap generated
+app/
+.build/
